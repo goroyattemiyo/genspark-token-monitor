@@ -29,8 +29,13 @@
       font-size: 10px;
       color: #aaaaaa;
       margin-bottom: 8px;
-      line-height: 1.5;
+      line-height: 1.6;
+      background: #1a1a2e;
+      border-left: 2px solid #4a9eff;
+      padding: 6px 8px;
+      border-radius: 0 4px 4px 0;
     }
+    .hint span { color: #fbbf24; }
     input[type="number"] {
       width: 100%;
       background: #1e1e2e;
@@ -75,9 +80,7 @@
       color: #aaaaaa;
       line-height: 1.8;
     }
-    .note span {
-      color: #fbbf24;
-    }
+    .note span { color: #fbbf24; }
   </style>
 </head>
 <body>
@@ -85,8 +88,8 @@
 
   <label>トークン上限値を設定</label>
   <div class="hint">
-    Gensparkの1会話あたりの上限目安を入力してください。<br>
-    公式非公開のため推奨値は <span>100,000</span> トークンです。
+    💡 <span>実際に上限エラーが出たときの合計トークン数</span>を入力すると精度が上がります。<br>
+    初期値は推奨値の <span>100,000</span> を使用してください。
   </div>
   <input type="number" id="limitInput" value="100000" min="1000" step="1000">
 
