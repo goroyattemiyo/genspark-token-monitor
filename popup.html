@@ -19,24 +19,32 @@
       margin-bottom: 14px;
       letter-spacing: 1px;
     }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      font-size: 12px;
+    label {
+      color: #cccccc;
+      font-size: 11px;
+      display: block;
+      margin-bottom: 4px;
     }
-    label { color: #888; font-size: 11px; display: block; margin-bottom: 4px; }
+    .hint {
+      font-size: 10px;
+      color: #aaaaaa;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
     input[type="number"] {
       width: 100%;
       background: #1e1e2e;
-      border: 1px solid #444;
+      border: 1px solid #666;
       border-radius: 6px;
-      color: #e0e0e0;
+      color: #ffffff;
       padding: 6px 10px;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 13px;
       margin-bottom: 12px;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #4a9eff;
     }
     button {
       width: 100%;
@@ -64,29 +72,36 @@
     }
     .note {
       font-size: 10px;
-      color: #555;
-      line-height: 1.6;
+      color: #aaaaaa;
+      line-height: 1.8;
+    }
+    .note span {
+      color: #fbbf24;
     }
   </style>
 </head>
 <body>
   <h1>⚡ GENSPARK TOKEN MONITOR</h1>
 
-  <label>トークン上限値（目安）</label>
+  <label>トークン上限値を設定</label>
+  <div class="hint">
+    Gensparkの1会話あたりの上限目安を入力してください。<br>
+    公式非公開のため推奨値は <span>100,000</span> トークンです。
+  </div>
   <input type="number" id="limitInput" value="100000" min="1000" step="1000">
 
-  <button id="saveBtn">保存</button>
+  <button id="saveBtn">保存する</button>
   <div class="saved" id="savedMsg">✓ 保存しました</div>
 
   <hr class="divider">
 
   <div class="note">
-    ・Input / Output トークンを個別に推定<br>
+    📊 推定方式<br>
     ・日本語：約1文字 = 1トークン<br>
     ・英語：約4文字 = 1トークン<br>
-    ・80%超 → 黄色警告<br>
-    ・95%超 → 赤色アラート<br>
-    ・実測値ではなく推定値です
+    ・80%超 → ⚠️ 黄色警告<br>
+    ・95%超 → 🚨 赤色アラート<br>
+    ※実測値ではなく推定値です
   </div>
 
   <script src="popup.js"></script>
