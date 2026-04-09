@@ -157,8 +157,11 @@ function run() {
   updateOverlay(inputTokens, outputTokens);
 }
 
+// デバウンス処理：300ms以内の連続呼び出しをまとめる
+let debounceTimer;
 const observer = new MutationObserver(() => {
-  run();
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(run, 300);
 });
 
 run();
