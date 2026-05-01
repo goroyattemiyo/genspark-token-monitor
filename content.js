@@ -2,8 +2,8 @@ const TOKEN_LIMIT_DEFAULT = 100000;
 const SERVICE = location.hostname === 'claude.ai' ? 'claude' : 'codex';
 const SELECTORS = {
   claude: {
-    user: 'div.whitespace-pre-wrap.break-words',
-    ai: 'div[class*="font-claude-response-body"]'
+    user: 'p.whitespace-pre-wrap.break-words',
+    ai: 'p[class*="font-claude-response-body"], div[class*="font-claude-response-body"]'
   },
   codex: {
     user: 'div.px-4.text-sm.break-words.whitespace-pre-wrap',
@@ -37,6 +37,31 @@ function collectMessages() {
   };
 }
 
+function addDrag(overlay) {
+  let isDragging = false;
+  let startX, startY, origX, origY;
+  overlay.style.cursor = 'move';
+  overlay.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const rect = overlay.getBoundingClientRect();
+    origX = rect.left;
+    origY = rect.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    overlay.style.left = (origX + dx) + 'px';
+    overlay.style.top = (origY + dy) + 'px';
+    overlay.style.right = 'auto';
+    overlay.style.bottom = 'auto';
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; });
+}
+
 function createOverlay() {
   if (document.getElementById('ai-token-monitor')) return;
   const overlay = document.createElement('div');
@@ -55,6 +80,7 @@ function createOverlay() {
     font-size: 12px;
     z-index: 999999;
     line-height: 1.6;
+    user-select: none;
   `;
   const badge = SERVICE === 'claude' ? '🟠 CLAUDE' : '🟢 CODEX';
   overlay.innerHTML = `
@@ -75,6 +101,7 @@ function createOverlay() {
     <div id="atm-warning" style="display:none;font-size:11px;margin-top:4px;"></div>
   `;
   document.body.appendChild(overlay);
+  addDrag(overlay);
 }
 
 function updateOverlay(inputTokens, outputTokens) {
@@ -90,7 +117,6 @@ function updateOverlay(inputTokens, outputTokens) {
     document.getElementById('atm-total').textContent = total.toLocaleString();
 
     const getColor = (pct) => pct >= 95 ? '#ef4444' : pct >= 80 ? '#fbbf24' : null;
-
     document.getElementById('atm-input-gauge').style.width = inputPct + '%';
     document.getElementById('atm-output-gauge').style.width = outputPct + '%';
     document.getElementById('atm-total-gauge').style.width = totalPct + '%';
