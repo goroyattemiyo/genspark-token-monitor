@@ -3,108 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Token Monitor</title>
+  <title>AI Token Monitor</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 280px;
-      background: #0f0f1a;
-      color: #e0e0e0;
-      font-family: monospace;
-      padding: 16px;
-    }
-    h1 {
-      font-size: 13px;
-      color: #4a9eff;
-      margin-bottom: 14px;
-      letter-spacing: 1px;
-    }
-    label {
-      color: #cccccc;
-      font-size: 11px;
-      display: block;
-      margin-bottom: 4px;
-    }
-    .hint {
-      font-size: 10px;
-      color: #aaaaaa;
-      margin-bottom: 8px;
-      line-height: 1.6;
-      background: #1a1a2e;
-      border-left: 2px solid #4a9eff;
-      padding: 6px 8px;
-      border-radius: 0 4px 4px 0;
-    }
-    .hint span { color: #fbbf24; }
-    input[type="number"] {
-      width: 100%;
-      background: #1e1e2e;
-      border: 1px solid #666;
-      border-radius: 6px;
-      color: #ffffff;
-      padding: 6px 10px;
-      font-family: monospace;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
-    input[type="number"]:focus {
-      outline: none;
-      border-color: #4a9eff;
-    }
-    button {
-      width: 100%;
-      background: #4a9eff;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 8px;
-      font-family: monospace;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    button:hover { background: #3a8eef; }
-    .saved {
-      text-align: center;
-      color: #4ade80;
-      font-size: 11px;
-      margin-top: 8px;
-      display: none;
-    }
-    .divider {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 14px 0;
-    }
-    .note {
-      font-size: 10px;
-      color: #aaaaaa;
-      line-height: 1.8;
-    }
-    .note span { color: #fbbf24; }
+    body { width: 280px; background: #0f0f1a; color: #e0e0e0; font-family: monospace; padding: 16px; }
+    h1 { font-size: 13px; color: #4a9eff; margin-bottom: 14px; letter-spacing: 0.4px; }
+    label { color: #cccccc; font-size: 11px; display: block; margin-bottom: 6px; }
+    input[type="number"] { width: 100%; background: #1e1e2e; border: 1px solid #666; border-radius: 6px; color: #fff; padding: 8px 10px; font-family: monospace; margin-bottom: 10px; }
+    button { width: 100%; background: #4a9eff; color: #fff; border: none; border-radius: 6px; padding: 8px; font-family: monospace; cursor: pointer; }
+    .saved { text-align: center; color: #4ade80; font-size: 11px; margin-top: 8px; display: none; }
+    .note { margin-top: 12px; font-size: 10px; color: #aaa; line-height: 1.7; }
   </style>
 </head>
 <body>
-  <h1>⚡ GENSPARK TOKEN MONITOR</h1>
-
-  <label>トークン上限値を設定</label>
-  <div class="hint">
-    💡 <span>実際に上限エラーが出たときの合計トークン数</span>を入力すると精度が上がります。<br>
-    初期値は推奨値の <span>100,000</span> を使用してください。
-  </div>
+  <h1>⚡ AI TOKEN MONITOR</h1>
+  <label for="limitInput">トークン上限値（デフォルト: 100,000）</label>
   <input type="number" id="limitInput" value="100000" min="1000" step="1000">
-
-  <button id="saveBtn">保存する</button>
+  <button id="saveBtn">保存</button>
   <div class="saved" id="savedMsg">✓ 保存しました</div>
 
-  <hr class="divider">
-
   <div class="note">
-    📊 推定方式<br>
-    ・日本語：約1文字 = 1トークン<br>
-    ・英語：約4文字 = 1トークン<br>
-    ・80%超 → ⚠️ 黄色警告<br>
-    ・95%超 → 🚨 赤色アラート<br>
-    ※実測値ではなく推定値です
+    対応: claude.ai/chat, chatgpt.com/codex<br>
+    80%以上: ⚠️ / 95%以上: 🚨<br>
+    ※表示は推定トークンです
   </div>
 
   <script src="popup.js"></script>

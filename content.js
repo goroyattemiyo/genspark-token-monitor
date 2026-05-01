@@ -1,7 +1,15 @@
-// Genspark Token Monitor - Content Script
+const TOKEN_LIMIT_DEFAULT = 100000;
+const SERVICE = location.hostname === 'claude.ai' ? 'claude' : 'codex';
 
-const TOKEN_LIMITS = {
-  default: 100000
+const SELECTORS = {
+  claude: {
+    user: 'div.whitespace-pre-wrap.break-words',
+    ai: 'div[class*="font-claude-response-body"]'
+  },
+  codex: {
+    user: 'div.px-4.text-sm.break-words.whitespace-pre-wrap',
+    ai: 'div[class*="markdown"][class*="prose"]'
+  }
 };
 
 function estimateTokens(text) {
@@ -9,9 +17,7 @@ function estimateTokens(text) {
   let count = 0;
   for (const char of text) {
     const code = char.charCodeAt(0);
-    if (code >= 0x3000 && code <= 0x9FFF) {
-      count += 1;
-    } else if (code >= 0xAC00 && code <= 0xD7AF) {
+    if ((code >= 0x3000 && code <= 0x9fff) || (code >= 0xac00 && code <= 0xd7af)) {
       count += 1;
     } else {
       count += 0.25;
@@ -21,37 +27,31 @@ function estimateTokens(text) {
 }
 
 function collectMessages() {
-  const inputTokens = { text: '', tokens: 0 };
-  const outputTokens = { text: '', tokens: 0 };
+  const selector = SELECTORS[SERVICE];
+  const inputText = Array.from(document.querySelectorAll(selector.user))
+    .map((el) => el.innerText)
+    .join(' ');
+  const outputText = Array.from(document.querySelectorAll(selector.ai))
+    .map((el) => el.innerText)
+    .join(' ');
 
-  const userMessages = document.querySelectorAll(
-    '[class*="user"], [class*="human"], [data-role="user"], [class*="message-user"]'
-  );
-  const aiMessages = document.querySelectorAll(
-    '[class*="assistant"], [class*="ai-"], [data-role="assistant"], [class*="message-assistant"], [class*="bot"]'
-  );
-
-  userMessages.forEach(el => { inputTokens.text += el.innerText + ' '; });
-  aiMessages.forEach(el => { outputTokens.text += el.innerText + ' '; });
-
-  inputTokens.tokens = estimateTokens(inputTokens.text);
-  outputTokens.tokens = estimateTokens(outputTokens.text);
-
-  return { inputTokens, outputTokens };
+  return {
+    inputTokens: estimateTokens(inputText),
+    outputTokens: estimateTokens(outputText)
+  };
 }
 
 function createOverlay() {
-  const existing = document.getElementById('gspark-token-monitor');
-  if (existing) return;
+  if (document.getElementById('ai-token-monitor')) return;
 
   const overlay = document.createElement('div');
-  overlay.id = 'gspark-token-monitor';
+  overlay.id = 'ai-token-monitor';
   overlay.style.cssText = `
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 220px;
-    background: rgba(20, 20, 30, 0.92);
+    width: 240px;
+    background: rgba(20, 20, 30, 0.94);
     color: #e0e0e0;
     border: 1px solid #444;
     border-radius: 10px;
@@ -60,82 +60,78 @@ function createOverlay() {
     font-size: 12px;
     z-index: 999999;
     box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    cursor: pointer;
     user-select: none;
   `;
 
+  const serviceLabel = SERVICE === 'claude' ? 'CLAUDE' : 'CODEX';
+
   overlay.innerHTML = `
-    <div style="font-size:11px; color:#888; margin-bottom:6px;">⚡ Token Monitor</div>
-    <div id="gspark-input-bar" style="margin-bottom:6px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-        <span>Input</span><span id="gspark-input-count">0</span>
-      </div>
-      <div style="background:#333; border-radius:3px; height:6px;">
-        <div id="gspark-input-gauge" style="height:6px; border-radius:3px; background:#4a9eff; width:0%; transition:width 0.3s;"></div>
-      </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span style="font-size:11px; color:#888;">⚡ AI Token Monitor</span>
+      <span style="font-size:10px; padding:2px 6px; border-radius:999px; background:#2b2b3c; color:#9cc0ff;">${serviceLabel}</span>
     </div>
-    <div id="gspark-output-bar" style="margin-bottom:6px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-        <span>Output</span><span id="gspark-output-count">0</span>
-      </div>
-      <div style="background:#333; border-radius:3px; height:6px;">
-        <div id="gspark-output-gauge" style="height:6px; border-radius:3px; background:#a78bfa; width:0%; transition:width 0.3s;"></div>
-      </div>
-    </div>
-    <div style="border-top:1px solid #333; margin:6px 0;"></div>
-    <div style="display:flex; justify-content:space-between; font-size:12px;">
-      <span style="color:#aaa;">合計</span>
-      <span id="gspark-total-count" style="color:#fff; font-weight:bold;">0</span>
-    </div>
-    <div id="gspark-total-bar" style="margin-top:4px; margin-bottom:4px;">
-      <div style="background:#333; border-radius:3px; height:6px;">
-        <div id="gspark-total-gauge" style="height:6px; border-radius:3px; background:#4ade80; width:0%; transition:width 0.3s;"></div>
-      </div>
-    </div>
-    <div id="gspark-warning" style="margin-top:4px; font-size:11px; color:#fbbf24; display:none;"></div>
-    <div style="margin-top:6px; font-size:10px; color:#555;">Limit: <span id="gspark-limit-display">100,000</span></div>
+    ${renderBar('入力', 'input', '#4a9eff')}
+    ${renderBar('出力', 'output', '#a78bfa')}
+    <div style="border-top:1px solid #333; margin:8px 0 6px;"></div>
+    ${renderBar('合計', 'total', '#4ade80')}
+    <div id="tm-warning" style="margin-top:6px; font-size:11px; display:none;"></div>
+    <div style="margin-top:6px; font-size:10px; color:#666;">Limit: <span id="tm-limit">100,000</span></div>
   `;
 
   document.body.appendChild(overlay);
 }
 
+function renderBar(label, key, color) {
+  return `
+    <div style="margin-bottom:6px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+        <span>${label}</span><span id="tm-${key}-count">0</span>
+      </div>
+      <div style="background:#333; border-radius:3px; height:6px;">
+        <div id="tm-${key}-gauge" style="height:6px; border-radius:3px; background:${color}; width:0%; transition:width 0.3s;"></div>
+      </div>
+    </div>
+  `;
+}
+
+function getColor(pct) {
+  if (pct >= 95) return '#ef4444';
+  if (pct >= 80) return '#fbbf24';
+  return '#4a9eff';
+}
+
 function updateOverlay(inputTokens, outputTokens) {
-  chrome.storage.sync.get(['tokenLimit'], (result) => {
-    const limit = result.tokenLimit || TOKEN_LIMITS.default;
-    const total = inputTokens.tokens + outputTokens.tokens;
+  chrome.storage.local.get(['tokenLimit'], (result) => {
+    const limit = result.tokenLimit || TOKEN_LIMIT_DEFAULT;
+    const totalTokens = inputTokens + outputTokens;
 
-    const inputEl = document.getElementById('gspark-input-count');
-    const outputEl = document.getElementById('gspark-output-count');
-    const totalEl = document.getElementById('gspark-total-count');
-    const inputGauge = document.getElementById('gspark-input-gauge');
-    const outputGauge = document.getElementById('gspark-output-gauge');
-    const totalGauge = document.getElementById('gspark-total-gauge');
-    const warning = document.getElementById('gspark-warning');
-    const limitDisplay = document.getElementById('gspark-limit-display');
+    const inputPct = Math.min((inputTokens / limit) * 100, 100);
+    const outputPct = Math.min((outputTokens / limit) * 100, 100);
+    const totalPct = Math.min((totalTokens / limit) * 100, 100);
 
-    if (!inputEl) return;
-
-    const inputPct = Math.min((inputTokens.tokens / limit) * 100, 100);
-    const outputPct = Math.min((outputTokens.tokens / limit) * 100, 100);
-    const totalPct = Math.min((total / limit) * 100, 100);
-
-    inputEl.textContent = inputTokens.tokens.toLocaleString();
-    outputEl.textContent = outputTokens.tokens.toLocaleString();
-    totalEl.textContent = total.toLocaleString();
-    limitDisplay.textContent = limit.toLocaleString();
-
-    const getColor = (pct) => {
-      if (pct >= 95) return '#ef4444';
-      if (pct >= 80) return '#fbbf24';
-      return pct > 50 ? '#a78bfa' : '#4a9eff';
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    const setGauge = (id, pct) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.width = `${pct}%`;
+        el.style.background = getColor(pct);
+      }
     };
 
-    inputGauge.style.width = inputPct + '%';
-    inputGauge.style.background = getColor(inputPct);
-    outputGauge.style.width = outputPct + '%';
-    outputGauge.style.background = getColor(outputPct);
-    totalGauge.style.width = totalPct + '%';
-    totalGauge.style.background = getColor(totalPct);
+    setText('tm-input-count', inputTokens.toLocaleString());
+    setText('tm-output-count', outputTokens.toLocaleString());
+    setText('tm-total-count', totalTokens.toLocaleString());
+    setText('tm-limit', limit.toLocaleString());
+
+    setGauge('tm-input-gauge', inputPct);
+    setGauge('tm-output-gauge', outputPct);
+    setGauge('tm-total-gauge', totalPct);
+
+    const warning = document.getElementById('tm-warning');
+    if (!warning) return;
 
     if (totalPct >= 95) {
       warning.style.display = 'block';
@@ -157,7 +153,6 @@ function run() {
   updateOverlay(inputTokens, outputTokens);
 }
 
-// デバウンス処理：300ms以内の連続呼び出しをまとめる
 let debounceTimer;
 const observer = new MutationObserver(() => {
   clearTimeout(debounceTimer);
@@ -165,10 +160,6 @@ const observer = new MutationObserver(() => {
 });
 
 run();
-
 setTimeout(() => {
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }, 2000);

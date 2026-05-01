@@ -1,21 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Genspark Token Monitor",
+  "name": "AI Token Monitor",
   "version": "1.0.0",
-  "description": "Genspark token usage monitor - Estimates input/output token consumption and warns when approaching limits",
-  "permissions": [
-    "activeTab",
-    "storage"
-  ],
+  "description": "claude.aiとCodexのトークン使用量をリアルタイム監視",
+  "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": ["*://*.genspark.ai/*"],
+      "matches": [
+        "https://claude.ai/chat/*",
+        "https://chatgpt.com/codex/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Token Monitor"
+    "default_popup": "popup.html"
   }
 }
